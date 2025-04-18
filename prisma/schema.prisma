@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Startup {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  slogan    String
+  foundedAt DateTime
+  points    Int        @default(70)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  battlesAsA    Battle[]  @relation("StartupA")
+  battlesAsB    Battle[]  @relation("StartupB")
+  battleWins    Battle[]  @relation("BattleWinner")
+  events        Event[]
+  feedbacks     Feedback[]
+}
+
+model Round {
+  id        String     @id @default(uuid())
+  number    Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  battles   Battle[]
+  feedbacks Feedback[]
+}
+
+model Battle {
+  id        String     @id @default(uuid())
+  roundId   String
+  startupAId String
+  startupBId String
+  status    BattleStatus @default(PENDING)
+  winnerId  String?
+  wasSharkFight Boolean @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  round     Round      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  startupA  Startup    @relation("StartupA", fields: [startupAId], references: [id], onDelete: Cascade)
+  startupB  Startup    @relation("StartupB", fields: [startupBId], references: [id], onDelete: Cascade)
+  winner    Startup?   @relation(name: "BattleWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  events    Event[]
+}
+
+model Event {
+  id        String     @id @default(uuid())
+  battleId  String
+  startupId String
+  type      EventType
+  points    Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  battle    Battle     @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  startup   Startup    @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model Feedback {
+  id        String     @id @default(uuid())
+  startupId String
+  roundId   String
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  startup   Startup    @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  round     Round      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+}
+
+enum BattleStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum EventType {
+  PITCH_CONVINCENTE
+  PRODUTO_COM_BUGS
+  BOA_TRACAO_USUARIOS
+  INVESTIDOR_IRRITADO
+  FAKE_NEWS_PITCH
+  BATTLE_VICTORY
+  SHARK_FIGHT_VICTORY
+}
